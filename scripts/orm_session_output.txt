@@ -1,0 +1,94 @@
+# Пункт 16. Импорт моделей
+>>> from accounts.models import Department, Course, StudentProfile
+>>> from django.contrib.auth.models import User
+
+# Пункт 17. Получение всех факультетов
+>>> Department.objects.all()
+<QuerySet [<Department: Информационные технологии>, <Department: Прикладная математика>]>
+
+# Пункт 18. Создание объекта через ORM
+>>> dep = Department.objects.create(name='Автоматизация')
+>>> dep
+<Department: Автоматизация>
+
+# Пункт 19. Получение объекта по условию (get)
+>>> Department.objects.get(name='Автоматизация')
+<Department: Автоматизация>
+>>> Department.objects.get(id=6)
+<Department: Информационные технологии>
+
+# Пункт 20. Фильтрация объектов без учёта регистра (icontains)
+>>> Department.objects.filter(name__icontains='матем')
+<QuerySet [<Department: Прикладная математика>]>
+
+# Пункт 21. Создание курса через ORM
+>>> dep = Department.objects.get(name='Информационные технологии')
+>>> course = Course.objects.create(title='Разработка веб-приложений', department=dep)
+>>> course
+<Course: Разработка веб-приложений>
+
+# Пункт 22. Получение курсов факультета в обратном направлении (related_name='courses')
+>>> dep.courses.all()
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>, <Course: Разработка веб-приложений>]>
+
+# Пункт 23. Получение курсов через обычный фильтр Course.objects.filter
+>>> Course.objects.filter(department=dep)
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>, <Course: Разработка веб-приложений>]>
+
+# Пункт 24. Получение пользователя student1
+>>> user = User.objects.get(username='student1')
+>>> user
+<User: student1>
+
+# Пункт 25. Получение профиля студента (через get и через OneToOne related_name)
+>>> profile = StudentProfile.objects.get(user=user)
+>>> profile
+<StudentProfile: student1>
+>>> user.student_profile
+<StudentProfile: student1>
+
+# Пункт 26. Просмотр факультета студента
+>>> profile.department
+<Department: Информационные технологии>
+
+# Пункт 27. Просмотр курсов студента
+>>> profile.courses.all()
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>]>
+
+# Пункт 28. Добавление студенту нового курса (ManyToMany add)
+>>> course = Course.objects.get(title='Разработка веб-приложений')
+>>> profile.courses.add(course)
+>>> profile.courses.all()
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>, <Course: Разработка веб-приложений>]>
+
+# Пункт 29. Удаление курса у студента (ManyToMany remove)
+>>> profile.courses.remove(course)
+>>> profile.courses.all()
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>]>
+
+# Пункт 30. Изменение объекта и сохранение в БД (save)
+>>> dep = Department.objects.get(name='Автоматизация')
+>>> dep.name = 'Автоматизация и управление'
+>>> dep.save()
+>>> Department.objects.all()
+<QuerySet [<Department: Информационные технологии>, <Department: Прикладная математика>, <Department: Автоматизация и управление>]>
+
+# Пункт 31. Удаление объекта из базы данных (delete)
+>>> dep.delete()
+(1, {'accounts.Department': 1})
+>>> Department.objects.all()
+<QuerySet [<Department: Информационные технологии>, <Department: Прикладная математика>]>
+
+# Пункт 32. Выборка по связанной модели через двойное подчёркивание (department__name__icontains)
+>>> Course.objects.filter(department__name__icontains='Информационные')
+<QuerySet [<Course: Веб-программирование>, <Course: Базы данных>, <Course: Программирование на Python>, <Course: Разработка веб-приложений>]>
+
+# Пункт 33. Поиск студентов определённого курса (related_name='students')
+>>> course = Course.objects.get(title='Веб-программирование')
+>>> course.students.all()
+<QuerySet [<StudentProfile: student1>]>
+
+# Пункт 39. Просмотр автоматически сгенерированного SQL-запроса (queryset.query)
+>>> queryset = Course.objects.filter(department__name__icontains='Информационные')
+>>> print(queryset.query)
+SELECT "accounts_course"."id", "accounts_course"."title", "accounts_course"."description", "accounts_course"."department_id" FROM "accounts_course" INNER JOIN "accounts_department" ON ("accounts_course"."department_id" = "accounts_department"."id") WHERE "accounts_department"."name" LIKE %Информационные% ESCAPE '\'
